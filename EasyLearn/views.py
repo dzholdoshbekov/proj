@@ -1,17 +1,9 @@
-from collections import OrderedDict
-
 from django.contrib.auth.models import User
-
-
-from .serializers import UserSerializer, CourseSerializer, EnrollmentSerializer
-from rest_framework import viewsets, permissions, generics, status
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-
-
-from .permissions import *
-from .serializers import *
-
+from .permissions import IsOwnerOrReadOnly
+from .serializers import EnrollmentSerializer, CourseSerializer, UserSerializer, BlocksSerializer
+from .models import Enrollment, Course, LessonBlocks
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -39,10 +31,8 @@ class CourseBlockViewSet(viewsets.ModelViewSet):
     serializer_class = BlocksSerializer
 
     def get_permissions(self):
-        if self.action == 'update' or self.action == 'partial_update' or self.action == 'destroy':
-            permission_classes = [permissions.IsAuthenticated, IsLessonBlockAuthor]
-        elif self.action == 'create':
-            permission_classes = [permissions.IsAuthenticated, IsLessonBlockAuthor]
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
         else:
             permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
@@ -56,22 +46,20 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
 class MyAccountView(viewsets.ModelViewSet):
+    queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    permission_classes = (permissions.IsAuthenticated, )
 
-    def get_queryset(self):
-        user = self.request.user
-        return Enrollment.objects.filter(user=user)
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        enrollments = Enrollment.objects.filter(user=user)
+        courses = Course.objects.filter(author=user)
+        enrollment_serializer = EnrollmentSerializer(enrollments, many=True)
+        course_serializer = CourseSerializer(courses, many=True)
+        data = {
+            'enrollments': enrollment_serializer.data,
+            'courses': course_serializer.data
+        }
 
-    def list(self, request):
-        user = self.request.user
-        enrolled_courses = Enrollment.objects.filter(user=user)
-        authored_courses = Course.objects.filter(author=user)
-        enrolled_serializer = EnrollmentSerializer(enrolled_courses, many=True)
-        authored_serializer = CourseSerializer(authored_courses, many=True)
-
-        return Response({
-            'enrolled_courses', enrolled_serializer.data,
-            'authored_courses', authored_serializer.data
-        })
+        return Response({'data': data})

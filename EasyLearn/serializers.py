@@ -11,7 +11,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ('title', 'description', 'cat', 'author', 'price', 'discount', 'final_price')
+        fields = ('title', 'description', 'category', 'author', 'price', 'discount', 'final_price')
 
     def get_final_price(self, obj):
         discount = obj.discount

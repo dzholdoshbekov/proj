@@ -10,16 +10,18 @@ class Course(models.Model):
     students = models.ManyToManyField(User, through='Enrollment', related_name='enrolled_courses')
     price = models.IntegerField(null=True)
     discount = models.IntegerField(null=True)
-    cat = models.ForeignKey('Category', related_name="Категории", on_delete=PROTECT, null=True)
+    category = models.ForeignKey('Category', related_name="category", on_delete=PROTECT, null=True)
 
     def __str__(self):
         return self.title
+
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
+
 
 class Enrollment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

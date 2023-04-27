@@ -1,0 +1,19 @@
+# Ignore database files
+db.sqlite3
+
+# Ignore static files
+staticfiles/
+
+# Ignore media files
+media/
+
+# Ignore environment-specific settings files
+*.env
+
+# Ignore PyCharm project files
+.idea/
+*.iml
+*.iws
+
+# Ignore virtual environment
+venv/
